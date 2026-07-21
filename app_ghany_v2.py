@@ -94,14 +94,14 @@ h2, h3 { color: var(--orange); font-weight: 700; }
 .spec-card .sub   { color: var(--cyan); font-size: 0.8rem; }
 
 /* Tags */
-.tag-critical { background: rgba(255,107,53,0.14); color: var(--orange); border:1px solid var(--orange); padding:2px 12px; border-radius: 2px; font-size:0.76rem; font-weight:700; font-family:'Space Mono',monospace;}
-.tag-moderate { background: rgba(232,166,40,0.16); color: var(--amber); border:1px solid var(--amber); padding:2px 12px; border-radius: 2px; font-size:0.76rem; font-weight:700; font-family:'Space Mono',monospace;}
-.tag-good     { background: rgba(0,144,168,0.14); color: var(--cyan); border:1px solid var(--cyan); padding:2px 12px; border-radius: 2px; font-size:0.76rem; font-weight:700; font-family:'Space Mono',monospace;}
+.tag-critical { background: #FF6B35; color: #FFFFFF; border:1px solid #C4491F; padding:3px 14px; border-radius: 2px; font-size:0.76rem; font-weight:700; font-family:'Space Mono',monospace;}
+.tag-moderate { background: #E8A628; color: #1A1200; border:1px solid #B37E14; padding:3px 14px; border-radius: 2px; font-size:0.76rem; font-weight:700; font-family:'Space Mono',monospace;}
+.tag-good     { background: #00A8C4; color: #FFFFFF; border:1px solid #007286; padding:3px 14px; border-radius: 2px; font-size:0.76rem; font-weight:700; font-family:'Space Mono',monospace;}
 
 /* Insight panel */
-.note-card { background: var(--panel); border: 1px solid var(--line); border-left: 5px solid var(--blue);
+.note-card { background: var(--panel); border: 1px solid var(--line); border-left: 6px solid var(--blue);
     border-radius: 2px; padding: 18px 20px; margin-bottom: 14px; }
-.note-card h4 { margin-top:0; color: var(--blue); font-family:'Space Mono', monospace; font-size:1.0rem;}
+.note-card h4 { margin-top:0; font-family:'Space Mono', monospace; font-size:1.05rem;}
 
 .identity-chip { background: var(--panel-2); border: 1px solid var(--blue); border-radius: 2px;
     padding: 8px 12px; margin-bottom: 10px; font-size: 0.82rem; }
@@ -165,6 +165,9 @@ FEATURE_COLS = [
     "pct_loc_Component", "pct_loc_Internal", "pct_loc_Surface",
     "pct_insp_Automated Testing", "pct_insp_Manual Testing", "pct_insp_Visual Inspection",
 ]
+
+# Palet warna klaster — dibuat pekat/kontras agar tiap klaster mudah dibedakan
+CLUSTER_COLORS = ["#2563EB", "#FF6B35", "#059669", "#DB2777", "#7C3AED", "#0891B2", "#CA8A04", "#DC2626"]
 
 
 @st.cache_data
@@ -270,9 +273,10 @@ st.sidebar.markdown(
 )
 st.sidebar.divider()
 
-page = st.sidebar.selectbox(
-    "Pilih Halaman",
+page = st.sidebar.radio(
+    "Navigasi",
     ["📟 Dashboard", "🗂️ Jelajah Data", "⚙️ Proses Klasterisasi", "🧭 Rekomendasi Aksi", "📄 Dokumentasi"],
+    label_visibility="collapsed",
 )
 
 df = load_raw_data()
@@ -427,7 +431,7 @@ elif page == "⚙️ Proses Klasterisasi":
             clustered, x="pca_1", y="pca_2", color=clustered["cluster"].astype(str),
             hover_data=["product_id", "total_defects", "avg_repair_cost"],
             title=f"Peta Klaster (PCA 2D — variansi terjelaskan {sum(evr)*100:.1f}%)",
-            color_discrete_sequence=["#0B3D91", "#FF6B35", "#0090A8", "#E8A628", "#6A4C93", "#2A9D8F", "#C9184A", "#4C6EF5"],
+            color_discrete_sequence=CLUSTER_COLORS,
         )
         fig.update_traces(marker=dict(size=11, line=dict(width=1, color="#F4F7FB")))
         fig.update_layout(template="plotly_white", plot_bgcolor="#FFFFFF", paper_bgcolor="#FFFFFF",
@@ -437,7 +441,7 @@ elif page == "⚙️ Proses Klasterisasi":
         sizes = clustered["cluster"].value_counts().sort_index()
         fig = px.bar(x=[f"Klaster {i}" for i in sizes.index], y=sizes.values,
                      title="Jumlah Produk per Klaster", color=[f"Klaster {i}" for i in sizes.index],
-                     color_discrete_sequence=["#0B3D91", "#FF6B35", "#0090A8", "#E8A628", "#6A4C93", "#2A9D8F", "#C9184A", "#4C6EF5"])
+                     color_discrete_sequence=CLUSTER_COLORS)
         fig.update_layout(template="plotly_white", plot_bgcolor="#FFFFFF", paper_bgcolor="#FFFFFF", font_color="#14213D",
                            showlegend=False, xaxis_title="", yaxis_title="Jumlah Produk")
         st.plotly_chart(fig, use_container_width=True)
@@ -461,9 +465,10 @@ elif page == "🧭 Rekomendasi Aksi":
 
     for c in sorted(narratives.keys()):
         nar = narratives[c]
+        ccolor = CLUSTER_COLORS[c % len(CLUSTER_COLORS)]
         st.markdown(
-            f"""<div class="note-card">
-            <h4>Klaster {c} — {nar['n']} produk &nbsp; {risk_tag(nar['risk'])}</h4>
+            f"""<div class="note-card" style="border-left-color:{ccolor};">
+            <h4 style="color:{ccolor};">Klaster {c} — {nar['n']} produk &nbsp; {risk_tag(nar['risk'])}</h4>
             <p><b>{nar['title']}</b></p>
             <p style="color:#5C7091; font-size:0.9rem;">
             Rerata {nar['avg_defects']:.1f} cacat/produk &middot;
